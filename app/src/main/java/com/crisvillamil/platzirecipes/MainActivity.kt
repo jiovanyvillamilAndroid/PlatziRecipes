@@ -107,6 +107,7 @@ class MainActivity : ComponentActivity() {
                     val recipeId = backStackEntry.arguments?.getString("recipeId", null).orEmpty()
                     detailViewModel.recipeId = recipeId
                     DetailScreen(
+                        navController = navHostController,
                         detailUIState = detailViewModel.state,
                         onDetailEvent = {
                             detailViewModel.onEvent(it)

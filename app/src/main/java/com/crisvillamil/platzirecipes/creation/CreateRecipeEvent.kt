@@ -5,6 +5,7 @@ import com.crisvillamil.platzirecipes.model.Difficulty
 sealed class CreateRecipeEvent {
     data class OnCreateRecipe(
         val name: String,
+        val description: String,
         val ingredients: String,
         val difficulty: Difficulty?,
         val cookingTime: String,

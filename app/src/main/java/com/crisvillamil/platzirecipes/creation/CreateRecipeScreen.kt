@@ -18,18 +18,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -64,6 +59,7 @@ fun CreateRecipeScreen(
     var hour by rememberSaveable { mutableStateOf("") }
     var minute by rememberSaveable { mutableStateOf("") }
     var ingredients by rememberSaveable { mutableStateOf("") }
+    var description by rememberSaveable { mutableStateOf("") }
     var createButtonEnabled by rememberSaveable { mutableStateOf(false) }
     createButtonEnabled =
         recipeNameText.isNotEmpty() && difficulty != null && hour.isNotEmpty()
@@ -76,13 +72,15 @@ fun CreateRecipeScreen(
             CreateRecipeContent(
                 state = createRecipeUIState,
                 recipeNameText = recipeNameText,
+                descriptionText = description,
                 onCreateRecipe = {
                     onCreateRecipeEvent(
                         CreateRecipeEvent.OnCreateRecipe(
                             name = recipeNameText,
+                            description = description,
                             ingredients = ingredients,
                             difficulty = difficulty,
-                            cookingTime = "${hour}h ${minute}min"
+                            cookingTime = "${hour}h ${minute}min",
                         )
                     )
                     navController.navigate(NavigationScreens.Home.route, navOptions {
@@ -110,6 +108,9 @@ fun CreateRecipeScreen(
                     ingredients = it
                 },
                 createButtonEnabled = createButtonEnabled,
+                onDescriptionTextChange = {
+                    description = it
+                }
             )
 
         }
@@ -122,7 +123,9 @@ fun CreateRecipeScreen(
 private fun HeaderSection(
     modifier: Modifier = Modifier,
     recipeNameText: String,
+    descriptionText: String,
     onNameTextChange: (String) -> Unit,
+    onDescriptionTextChange: (String) -> Unit,
     onDifficultySelected: (Difficulty) -> Unit
 ) {
     var hasImage by remember {
@@ -173,6 +176,16 @@ private fun HeaderSection(
             label = {
                 Text(text = "Dale un nombre a tu receta")
             })
+        Text(text = "Descripción")
+        TextField(
+            value = descriptionText,
+            onValueChange = {
+                onDescriptionTextChange(it)
+            },
+            label = {
+                Text(text = "De que trata la receta")
+            })
+
         Text(text = "Dificultad")
         RadioButtonSample(onDifficultySelected)
     }
@@ -183,6 +196,7 @@ fun CreateRecipeContent(
     modifier: Modifier = Modifier,
     state: CreateRecipeUIState,
     recipeNameText: String,
+    descriptionText: String,
     ingredients: String,
     onIngredientsChange: (String) -> Unit,
     onCreateRecipe: () -> Unit,
@@ -195,6 +209,7 @@ fun CreateRecipeContent(
     onHourChange: (String) -> Unit,
     onMinChange: (String) -> Unit,
     createButtonEnabled: Boolean,
+    onDescriptionTextChange: (String) -> Unit,
 ) {
     Column(
         modifier = modifier
@@ -204,8 +219,10 @@ fun CreateRecipeContent(
         HeaderSection(
             modifier = Modifier.fillMaxWidth(),
             recipeNameText = recipeNameText,
+            descriptionText = descriptionText,
             onNameTextChange = onNameTextChange,
             onDifficultySelected = onDifficultySelected,
+            onDescriptionTextChange = onDescriptionTextChange,
         )
         IngredientSection(
             modifier = Modifier.padding(top = 16.dp),

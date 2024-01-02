@@ -1,9 +1,7 @@
 package com.crisvillamil.platzirecipes.home
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,11 +13,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -35,8 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -47,9 +40,9 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
+import com.crisvillamil.platzirecipes.ItemImage
 import com.crisvillamil.platzirecipes.NavigationScreens
 import com.crisvillamil.platzirecipes.R
-import com.crisvillamil.platzirecipes.fromHex
 import com.crisvillamil.platzirecipes.ui.theme.light_gray_color
 
 
@@ -142,7 +135,9 @@ fun ItemsList(
                 RecipeItem(
                     recipeItemState = recipe,
                     navController = navController,
-                    onFavoriteClick = onFavoriteClick,
+                    onFavoriteClick = {
+                        onFavoriteClick(recipe.recipeId)
+                    },
                 )
             }
         }
@@ -154,12 +149,9 @@ fun RecipeItem(
     modifier: Modifier = Modifier,
     recipeItemState: RecipeItemState,
     navController: NavController,
-    onFavoriteClick: (Int) -> Unit,
+    onFavoriteClick: () -> Unit,
 ) {
-    val favoriteColor by animateColorAsState(
-        targetValue = if (recipeItemState.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-        label = "favoriteColorAnimation"
-    )
+
     Column(modifier = modifier.clickable {
         navController.navigate("${NavigationScreens.Detail.route}/${recipeItemState.recipeId}") {
             launchSingleTop = true
@@ -169,8 +161,9 @@ fun RecipeItem(
         Spacer(modifier = Modifier.height(32.dp))
         ItemImage(
             modifier = Modifier.fillMaxWidth(),
-            recipeItemState = recipeItemState,
-            favoriteColor = favoriteColor,
+            imageUrl = recipeItemState.imageUrl,
+            rating = recipeItemState.rating,
+            isFavorite = recipeItemState.isFavorite,
             onFavoriteClick = onFavoriteClick,
         )
         Spacer(modifier = Modifier.height(4.dp))
@@ -208,78 +201,6 @@ private fun AuthorLabel(modifier: Modifier = Modifier, authorName: String, autho
     }
 }
 
-@Composable
-private fun ItemImage(
-    modifier: Modifier = Modifier,
-    recipeItemState: RecipeItemState,
-    favoriteColor: Color,
-    onFavoriteClick: (Int) -> Unit,
-) {
-    Box(modifier = modifier) {
-        AsyncImage(
-            contentScale = ContentScale.FillWidth,
-            modifier = Modifier
-                .shadow(8.dp)
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp)),
-            model = recipeItemState.imageUrl,
-            contentDescription = "${recipeItemState.title} image"
-        )
-        Icon(
-            modifier = Modifier
-                .padding(8.dp)
-                .size(32.dp)
-                .align(Alignment.TopEnd)
-                .clip(CircleShape)
-                .background(Color.White)
-                .padding(4.dp)
-                .clickable {
-                    onFavoriteClick(recipeItemState.recipeId)
-                },
-            painter = painterResource(id = R.drawable.bookmark),
-            contentDescription = "Favorite button",
-            tint = favoriteColor
-        )
-        Rating(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(8.dp),
-            rating = recipeItemState.rating
-        )
-    }
-}
-
-@Composable
-private fun Rating(modifier: Modifier, rating: String) {
-    Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(
-                Color
-                    .fromHex("303030")
-                    .copy(alpha = 0.3f)
-            )
-            .padding(4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            modifier = Modifier
-                .align(Alignment.CenterVertically)
-                .size(16.dp),
-            imageVector = Icons.Filled.Star,
-            contentDescription = null,
-            tint = Color.White
-        )
-        Text(
-            modifier = Modifier
-                .align(Alignment.CenterVertically)
-                .padding(start = 4.dp, end = 4.dp),
-            text = rating,
-            style = MaterialTheme.typography.titleSmall,
-            color = Color.White
-        )
-    }
-}
 
 @Preview
 @Composable

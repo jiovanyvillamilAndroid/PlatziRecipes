@@ -58,15 +58,18 @@ class DetailViewModel : ViewModel() {
             state = state.copy(
                 isLoading = false,
                 recipeDetailState = RecipeDetailState(
-                    imageUrl = recipe.imageUrl,
+                    imageUrl = recipe.imageUrl.orEmpty(),
                     name = recipe.name,
-                    rate = recipe.rating,
+                    description = recipe.description,
+                    rate = recipe.rating.toString(),
                     isFavorite = fakeLocalPreferences.userFavoriteRecipe.contains(recipe),
                     ingredients = recipe.ingredients,
                     cookingSteps = recipe.cookingSteps,
                     ratingBarValue = fakeLocalPreferences.userRatedRecipes[recipeId.toInt()] ?: 0,
                     cookingTime = recipe.cookingTime,
                     difficulty = recipe.difficulty,
+                    authorName = recipe.authorName,
+                    authorImageUrl = recipe.authorImageUrl,
                 )
             )
         }

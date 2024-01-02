@@ -3,6 +3,7 @@ package com.crisvillamil.platzirecipes.model
 data class Recipe(
     val recipeId: Int,
     val name: String,
+    val description: String,
     val imageUrl: String?,
     val authorImageUrl: String?,
     val rating: Float?,

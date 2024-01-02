@@ -22,6 +22,7 @@ class CreateRecipeViewModel : ViewModel() {
             is CreateRecipeEvent.OnRemoveStep -> onRemoveStep(createRecipeEvent.cookingStepIndex)
             is CreateRecipeEvent.OnCreateRecipe -> onCreateRecipe(
                 createRecipeEvent.name,
+                createRecipeEvent.description,
                 createRecipeEvent.ingredients,
                 createRecipeEvent.difficulty,
                 createRecipeEvent.cookingTime
@@ -51,6 +52,7 @@ class CreateRecipeViewModel : ViewModel() {
 
     private fun onCreateRecipe(
         name: String,
+        description: String,
         ingredients: String,
         difficulty: Difficulty?,
         cookingTime: String,
@@ -68,6 +70,7 @@ class CreateRecipeViewModel : ViewModel() {
                     Recipe(
                         recipeId = FakeDataProvider.fakeRemoteData.size + 1,
                         name = name,
+                        description = description,
                         imageUrl = null,//TODO:Missing this implementation,
                         rating = null,
                         ingredients = ingredients,

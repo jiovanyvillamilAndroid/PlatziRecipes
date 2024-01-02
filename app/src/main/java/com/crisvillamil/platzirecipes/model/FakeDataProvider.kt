@@ -9,8 +9,9 @@ object FakeDataProvider {
                     Recipe(
                         recipeId = it + 1,
                         name = "Receta ${it + 1}",
+                        description = "Indonesian Fried Chicken or Ayam Goreng, is a delicious and popular dish that showcases the vibrant flavors of Indonesian cuisine.",
                         imageUrl = arrayListOf(
-                            "https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Bandepaisabog.JPG/546px-Bandepaisabog.JPG",
+                            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTrQ9APTA33CDFgSrc7xSLvB3jy6xk0FbK2lg&usqp=CAU",
                             "https://www.recetasnestle.com.co/sites/default/files/srh_recipes/f78cf6630b31638994b09b3b470b085c.jpg",
                             "https://cloudfront-us-east-1.images.arcpublishing.com/elespectador/LXNJRRHHR5ADHN6LCILCEELBO4.jpg"
                         ).random(),
