@@ -4,19 +4,31 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
-import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -29,8 +41,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
@@ -43,8 +57,11 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navOptions
 import coil.compose.AsyncImage
 import com.crisvillamil.platzirecipes.NavigationScreens
+import com.crisvillamil.platzirecipes.R
 import com.crisvillamil.platzirecipes.fileprovider.ComposeFileProvider
+import com.crisvillamil.platzirecipes.fromHex
 import com.crisvillamil.platzirecipes.model.Difficulty
+import com.crisvillamil.platzirecipes.ui.theme.light_gray_color
 
 
 @Composable
@@ -65,12 +82,15 @@ fun CreateRecipeScreen(
         recipeNameText.isNotEmpty() && difficulty != null && hour.isNotEmpty()
                 && minute.isNotEmpty() && ingredients.isNotEmpty()
                 && createRecipeUIState.cookingSteps.isNotEmpty()
+                && description.isNotEmpty()
     Surface(
         modifier = modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .padding(16.dp),
         content = {
             CreateRecipeContent(
                 state = createRecipeUIState,
+                navController = navController,
                 recipeNameText = recipeNameText,
                 descriptionText = description,
                 onCreateRecipe = {
@@ -147,28 +167,51 @@ private fun HeaderSection(
         })
     val context = LocalContext.current
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(text = "Crea tu receta")
+        Text(
+            style = MaterialTheme.typography.titleLarge,
+            text = "Crea tu receta"
+        )
         if (hasImage && imageUri != null) {
             AsyncImage(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .height(330.dp)
+                    .fillMaxWidth(),
                 model = imageUri,
                 contentDescription = null
             )
         } else {
-            Button(onClick = {
-                val uri = ComposeFileProvider.getImageUri(context)
-                imageUri = uri
-                cameraLauncher.launch(uri)
-            }) {
-                Text(text = "Tomar foto")
+            Box(modifier = Modifier
+                .height(330.dp)
+                .fillMaxWidth()
+                .clickable {
+                    val uri = ComposeFileProvider.getImageUri(context)
+                    imageUri = uri
+                    cameraLauncher.launch(uri)
+                }
+                .background(Color.fromHex("F3F4F6"))) {
+                Image(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(32.dp),
+                    painter = painterResource(id = R.drawable.image),
+                    contentDescription = null
+                )
             }
-            Button(onClick = { imagePicker.launch("image/") }) {
-                Text(text = "Agregar imagen")
+            Button(
+                onClick = { imagePicker.launch("image/") },
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(text = "Agregar desde galería")
             }
 
         }
-        Text(text = "Título de la receta")
-        TextField(
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            style = MaterialTheme.typography.titleSmall,
+            text = "Título de la receta"
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        OutlinedTextField(
             value = recipeNameText,
             onValueChange = {
                 onNameTextChange(it)
@@ -176,8 +219,12 @@ private fun HeaderSection(
             label = {
                 Text(text = "Dale un nombre a tu receta")
             })
-        Text(text = "Descripción")
-        TextField(
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            style = MaterialTheme.typography.titleSmall,
+            text = "Descripción"
+        )
+        OutlinedTextField(
             value = descriptionText,
             onValueChange = {
                 onDescriptionTextChange(it)
@@ -186,7 +233,10 @@ private fun HeaderSection(
                 Text(text = "De que trata la receta")
             })
 
-        Text(text = "Dificultad")
+        Text(
+            style = MaterialTheme.typography.titleSmall,
+            text = "Dificultad"
+        )
         RadioButtonSample(onDifficultySelected)
     }
 }
@@ -194,6 +244,7 @@ private fun HeaderSection(
 @Composable
 fun CreateRecipeContent(
     modifier: Modifier = Modifier,
+    navController: NavController,
     state: CreateRecipeUIState,
     recipeNameText: String,
     descriptionText: String,
@@ -216,6 +267,13 @@ fun CreateRecipeContent(
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
     ) {
+        Icon(
+            modifier = Modifier.clickable {
+                navController.popBackStack()
+            },
+            imageVector = Icons.Default.ArrowBack,
+            contentDescription = null
+        )
         HeaderSection(
             modifier = Modifier.fillMaxWidth(),
             recipeNameText = recipeNameText,
@@ -224,9 +282,18 @@ fun CreateRecipeContent(
             onDifficultySelected = onDifficultySelected,
             onDescriptionTextChange = onDescriptionTextChange,
         )
+        Spacer(modifier = Modifier.height(8.dp))
         IngredientSection(
             modifier = Modifier.padding(top = 16.dp),
-            hour, min, ingredients, onIngredientsChange, onHourChange, onMinChange
+            ingredients = ingredients,
+            onIngredientsChange = onIngredientsChange
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        TimeInput(
+            hour,
+            min,
+            onHourChange,
+            onMinChange
         )
         CookingStepSection(
             modifier = Modifier.padding(top = 16.dp),
@@ -240,12 +307,14 @@ fun CreateRecipeContent(
             modifier = Modifier
                 .align(Alignment.CenterHorizontally),
             enabled = createButtonEnabled,
+            shape = RoundedCornerShape(8.dp),
             onClick = { onCreateRecipe() }) {
             Text(text = "Crear Receta")
         }
     }
 }
 
+//TODO: Check how to select here
 @Composable
 fun RadioButtonSample(onDifficultySelected: (Difficulty) -> Unit) {
     val radioOptions = Difficulty.entries.toTypedArray()
@@ -282,22 +351,20 @@ fun RadioButtonSample(onDifficultySelected: (Difficulty) -> Unit) {
 @Composable
 private fun IngredientSection(
     modifier: Modifier,
-    hour: String,
-    min: String,
     ingredients: String,
     onIngredientsChange: (String) -> Unit,
-    onHourChange: (String) -> Unit,
-    onMinChange: (String) -> Unit
 ) {
     Column(modifier = modifier) {
-        Text(text = "Ingredientes")
-        TextField(
+        Text(
+            style = MaterialTheme.typography.titleSmall,
+            text = "Ingredientes"
+        )
+        OutlinedTextField(
             value = ingredients,
             placeholder = { Text(text = "Family favorite chicken soup") },
             onValueChange = { onIngredientsChange(it) })
     }
-    Divider()
-    TimeInput(hour, min, onHourChange, onMinChange)
+
 }
 
 @Composable
@@ -307,30 +374,35 @@ private fun TimeInput(
     onHourChange: (String) -> Unit,
     onMinChange: (String) -> Unit
 ) {
-    Row {
-        TextField(
-            modifier = Modifier.width(100.dp),
-            value = hour,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            placeholder = { Text(text = "horas") },
-            onValueChange = {
-                if (it.isDigitsOnly() && it.length <= 2) {
-                    onHourChange(it)
-                }
-            })
-        Text(text = "H")
-        TextField(
-            modifier = Modifier.width(100.dp),
-            value = min,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            placeholder = { Text(text = "minutos") },
-            onValueChange = {
-                if (it.isDigitsOnly() && it.length <= 2) {
-                    onMinChange(it)
-                }
-            })
-        Text(text = "min")
+    Column {
+        Text(
+            style = MaterialTheme.typography.titleSmall,
+            text = "Tiempo de preparación"
+        )
+        Row(verticalAlignment = Alignment.Bottom) {
+            OutlinedTextField(
+                modifier = Modifier.width(100.dp),
+                value = hour,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                placeholder = { Text(text = "horas") },
+                onValueChange = {
+                    if (it.isDigitsOnly() && it.length <= 2) {
+                        onHourChange(it)
+                    }
+                })
+            OutlinedTextField(
+                modifier = Modifier.width(100.dp),
+                value = min,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                placeholder = { Text(text = "minutos") },
+                onValueChange = {
+                    if (it.isDigitsOnly() && it.length <= 2) {
+                        onMinChange(it)
+                    }
+                })
+        }
     }
+
 }
 
 @Composable
@@ -343,11 +415,29 @@ private fun CookingStepSection(
     var stepDescription by rememberSaveable { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
     Column(modifier = modifier) {
-        Text(text = "Pasos para cocinar")
+        Text(
+            style = MaterialTheme.typography.titleMedium,
+            text = "Pasos para cocinar"
+        )
         state.cookingSteps.forEachIndexed { index, step ->
-            Column {
-                Text(text = (index + 1).toString())
-                Text(text = step)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.fromHex("F3F4F6"))
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    color = Color.fromHex("9CA3AF"),
+                    text = "${index + 1}"
+                )
+                Text(
+                    modifier = Modifier
+                        .padding(start = 8.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.fromHex("F3F4F6"))
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    color = Color.fromHex("9CA3AF"),
+                    text = step
+                )
                 Button(onClick = {
                     onRemoveStep(index)
                 }) {
@@ -357,11 +447,15 @@ private fun CookingStepSection(
                     )
                 }
             }
+
         }
         Column {
-            Text(text = "Paso número ${state.cookingSteps.size + 1}")
+            Text(
+                style = MaterialTheme.typography.titleSmall,
+                text = "Paso número ${state.cookingSteps.size + 1}"
+            )
             Row {
-                TextField(
+                OutlinedTextField(
                     modifier = Modifier.focusRequester(focusRequester),
                     value = stepDescription,
                     onValueChange = {
@@ -384,10 +478,7 @@ private fun CookingStepSection(
                     onAddStep(stepDescription)
                     stepDescription = ""
                 }) {
-                    Image(
-                        painter = painterResource(id = android.R.drawable.ic_input_add),
-                        contentDescription = "add item"
-                    )
+                    Icon(imageVector = Icons.Filled.Add, contentDescription = null)
                 }
             }
         }
