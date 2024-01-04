@@ -5,6 +5,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.crisvillamil.platzirecipes.domain.GetFavoriteRecipesUseCase
+import com.crisvillamil.platzirecipes.domain.RemoveFromFavoriteRecipeUseCase
 import com.crisvillamil.platzirecipes.model.FakeDataProvider
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -14,6 +16,9 @@ class FavoriteViewModel : ViewModel() {
     var state by mutableStateOf(FavoriteUIState())
         private set
 
+    private val getFavoriteRecipeUseCase = GetFavoriteRecipesUseCase()
+    private val removeFromFavoriteRecipeUseCase = RemoveFromFavoriteRecipeUseCase()
+
     fun onEvent(favoriteEvent: FavoriteEvent) {
         when (favoriteEvent) {
             FavoriteEvent.OnFetchFavoriteRecipes -> fetchFavoriteRecipes()
@@ -22,11 +27,11 @@ class FavoriteViewModel : ViewModel() {
     }
 
     private fun removeFromFavorite(recipeId: Int) {
-            val recipe = FakeDataProvider.fakeLocalPreferences.userFavoriteRecipe.first { it.recipeId == recipeId }
-            FakeDataProvider.fakeLocalPreferences.userFavoriteRecipe.remove(recipe)
+        viewModelScope.launch {
+            removeFromFavoriteRecipeUseCase(recipeId)
             state = state.copy(
                 isLoading = false,
-                favorites = FakeDataProvider.fakeLocalPreferences.userFavoriteRecipe.map {
+                favorites = getFavoriteRecipeUseCase().map {
                     with(it) {
                         FavoriteItemUIState(
                             recipeId = it.recipeId,
@@ -39,6 +44,7 @@ class FavoriteViewModel : ViewModel() {
                     }
                 }
             )
+        }
     }
 
     private fun fetchFavoriteRecipes() {
@@ -46,10 +52,9 @@ class FavoriteViewModel : ViewModel() {
             state = state.copy(
                 isLoading = true
             )
-            delay(1000L)
             state = state.copy(
                 isLoading = false,
-                favorites = FakeDataProvider.fakeLocalPreferences.userFavoriteRecipe.map {
+                favorites = getFavoriteRecipeUseCase().map {
                     with(it) {
                         FavoriteItemUIState(
                             recipeId = recipeId,

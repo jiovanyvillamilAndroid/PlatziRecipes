@@ -5,7 +5,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.crisvillamil.platzirecipes.model.FakeDataProvider
+import com.crisvillamil.platzirecipes.domain.AddToFavoriteRecipeUseCase
+import com.crisvillamil.platzirecipes.domain.GetIsFavoriteRecipeUseCase
+import com.crisvillamil.platzirecipes.domain.GetRecipesUseCase
+import com.crisvillamil.platzirecipes.domain.RemoveFromFavoriteRecipeUseCase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -14,6 +17,10 @@ class HomeViewModel : ViewModel() {
     var state by mutableStateOf(HomeUIState())
         private set
 
+    private val getRecipesUseCase = GetRecipesUseCase()
+    private val getIsFavoriteRecipeUseCase = GetIsFavoriteRecipeUseCase()
+    private val removeFromFavoriteRecipeUseCase = RemoveFromFavoriteRecipeUseCase()
+    private val addToFavoriteRecipeUseCase = AddToFavoriteRecipeUseCase()
     fun onEvent(homeEvent: HomeEvent) {
         when (homeEvent) {
             is HomeEvent.OnSearch -> onSearch(homeEvent.text)
@@ -25,15 +32,12 @@ class HomeViewModel : ViewModel() {
     private fun fetchRecipes() {
         viewModelScope.launch {
             showLoadingState()
-            delay(300L)
             state = state.copy(
                 isLoading = false,
-                recipes = FakeDataProvider.fakeRemoteData.map {
+                recipes = getRecipesUseCase().map {
                     RecipeItemState(
                         recipeId = it.recipeId,
-                        isFavorite = FakeDataProvider.fakeLocalPreferences.userFavoriteRecipe.contains(
-                            it
-                        ),
+                        isFavorite = getIsFavoriteRecipeUseCase(it.recipeId),
                         title = it.name,
                         isLoading = false,
                         authorName = it.authorName.orEmpty(),
@@ -58,7 +62,11 @@ class HomeViewModel : ViewModel() {
                     )
                 }
             )
-            delay(1000L)
+            if (getIsFavoriteRecipeUseCase(recipeId)) {
+                removeFromFavoriteRecipeUseCase(recipeId)
+            } else {
+                addToFavoriteRecipeUseCase(recipeId)
+            }
             state = state.copy(
                 isLoading = false,
                 recipes = state.recipes.toMutableList().also { list ->
@@ -70,39 +78,32 @@ class HomeViewModel : ViewModel() {
                     )
                 }
             )
-            val recipeInFavoriteList =
-                FakeDataProvider.fakeLocalPreferences.userFavoriteRecipe.firstOrNull { it.recipeId == recipeId }
-            val recipe = FakeDataProvider.fakeRemoteData.first { it.recipeId == recipeId }
-            if (recipeInFavoriteList == null) {
-                FakeDataProvider.fakeLocalPreferences.userFavoriteRecipe.add(recipe)
-            } else {
-                FakeDataProvider.fakeLocalPreferences.userFavoriteRecipe.remove(recipeInFavoriteList)
-            }
+
         }
     }
 
     private fun onSearch(text: String) {
-        state = state.copy(
-            recipes = FakeDataProvider.fakeRemoteData.map {
-                RecipeItemState(
-                    recipeId = it.recipeId,
-                    isFavorite = FakeDataProvider.fakeLocalPreferences.userFavoriteRecipe.contains(
-                        it
-                    ),
-                    title = it.name,
-                    isLoading = false,
-                    authorName = it.authorName.orEmpty(),
-                    authorImageUrl = it.authorImageUrl.orEmpty(),
-                    imageUrl = it.imageUrl.orEmpty(),
-                    rating = it.rating.toString(),
-                )
-            }.filter {
-                it.title.contains(
-                    text,
-                    ignoreCase = true
-                )
-            }
-        )
+        viewModelScope.launch {
+            state = state.copy(
+                recipes = getRecipesUseCase().map {
+                    RecipeItemState(
+                        recipeId = it.recipeId,
+                        isFavorite = getIsFavoriteRecipeUseCase(it.recipeId),
+                        title = it.name,
+                        isLoading = false,
+                        authorName = it.authorName.orEmpty(),
+                        authorImageUrl = it.authorImageUrl.orEmpty(),
+                        imageUrl = it.imageUrl.orEmpty(),
+                        rating = it.rating.toString(),
+                    )
+                }.filter {
+                    it.title.contains(
+                        text,
+                        ignoreCase = true
+                    )
+                }
+            )
+        }
     }
 
     private fun showLoadingState() {

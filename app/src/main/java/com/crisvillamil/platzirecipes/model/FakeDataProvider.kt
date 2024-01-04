@@ -1,8 +1,10 @@
 package com.crisvillamil.platzirecipes.model
 
-object FakeDataProvider {
+class FakeDataProvider : LocalDataSource {
 
-    val fakeRemoteData by lazy {
+    private val fakeLocalPreferences by lazy { FakeLocalPreferences() }
+
+    private var recipesLocalData: ArrayList<Recipe> =
         ArrayList<Recipe>().apply {
             repeat(30) {
                 add(
@@ -27,7 +29,7 @@ object FakeDataProvider {
                 )
             }
         }
-    }
+
 
     private fun generateIngredientsList(): String {
         var ingredients = ""
@@ -45,10 +47,44 @@ object FakeDataProvider {
         }
     }
 
-    val fakeLocalPreferences by lazy { FakeLocalPreferences() }
+
+    override suspend fun getRecipes(): List<Recipe> = recipesLocalData
+
+    override suspend fun saveRecipes(recipes: List<Recipe>) {
+        recipesLocalData = ArrayList(recipes)
+    }
+
+    override suspend fun saveRecipe(recipe: Recipe) {
+        recipesLocalData.add(recipe)
+    }
+
+    override suspend fun addToFavorite(recipeId: Int) {
+        fakeLocalPreferences.userFavoriteRecipe.add(recipeId)
+    }
+
+    override suspend fun removeFromFavorite(recipeId: Int) {
+        fakeLocalPreferences.userFavoriteRecipe.remove(recipeId)
+    }
+
+    override suspend fun isFavorite(recipeId: Int) =
+        fakeLocalPreferences.userFavoriteRecipe.contains(recipeId)
+
+
+    override suspend fun addRecipeRate(recipeId: Int, rate: Int) {
+        fakeLocalPreferences.userRatedRecipes[recipeId] = rate
+    }
+
+    override suspend fun getRateFromRecipe(recipeId: Int): Int? {
+        return if (fakeLocalPreferences.userRatedRecipes.contains(recipeId)) {
+            fakeLocalPreferences.userRatedRecipes[recipeId]
+        } else {
+            null
+        }
+    }
 
     data class FakeLocalPreferences(
         val userRatedRecipes: HashMap<Int, Int> = hashMapOf(),
-        val userFavoriteRecipe: HashSet<Recipe> = hashSetOf()
+        val userFavoriteRecipe: HashSet<Int> = hashSetOf()
     )
 }
+

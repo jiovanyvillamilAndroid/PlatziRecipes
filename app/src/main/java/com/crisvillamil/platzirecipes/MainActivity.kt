@@ -10,7 +10,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemColors
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -105,7 +104,7 @@ class MainActivity : ComponentActivity() {
                     )
                 ) { backStackEntry ->
                     val recipeId = backStackEntry.arguments?.getString("recipeId", null).orEmpty()
-                    detailViewModel.recipeId = recipeId
+                    detailViewModel.recipeId = recipeId.toInt()
                     DetailScreen(
                         navController = navHostController,
                         detailUIState = detailViewModel.state,

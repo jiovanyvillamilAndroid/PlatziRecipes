@@ -5,7 +5,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.crisvillamil.platzirecipes.model.FakeDataProvider
+import com.crisvillamil.platzirecipes.domain.AddToFavoriteRecipeUseCase
+import com.crisvillamil.platzirecipes.domain.GetIsFavoriteRecipeUseCase
+import com.crisvillamil.platzirecipes.domain.GetRecipeDetailUseCase
+import com.crisvillamil.platzirecipes.domain.GetUserRatedRecipesUseCase
+import com.crisvillamil.platzirecipes.domain.PutUserRatedRecipeUseCase
+import com.crisvillamil.platzirecipes.domain.RemoveFromFavoriteRecipeUseCase
 import com.crisvillamil.platzirecipes.model.Recipe
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -15,9 +20,14 @@ class DetailViewModel : ViewModel() {
     var state by mutableStateOf(DetailUIState())
         private set
 
-    lateinit var recipeId: String
+    var recipeId: Int? = null
     private lateinit var recipe: Recipe
-    private val fakeLocalPreferences = FakeDataProvider.fakeLocalPreferences
+    private val getIsFavoriteRecipeUseCase = GetIsFavoriteRecipeUseCase()
+    private val addToFavoriteRecipeUseCase = AddToFavoriteRecipeUseCase()
+    private val removeFromFavoriteRecipeUseCase = RemoveFromFavoriteRecipeUseCase()
+    private val getRecipeDetailUseCase = GetRecipeDetailUseCase()
+    private val getUserRatedRecipesUseCase = GetUserRatedRecipesUseCase()
+    private val putUserRatedRecipesUseCase = PutUserRatedRecipeUseCase()
 
     fun onEvent(detailEvent: DetailEvent) {
         when (detailEvent) {
@@ -28,33 +38,38 @@ class DetailViewModel : ViewModel() {
     }
 
     private fun onFavoriteClicked() {
-        if (fakeLocalPreferences.userFavoriteRecipe.contains(recipe)) {
-            fakeLocalPreferences.userFavoriteRecipe.remove(recipe)
-        } else {
-            fakeLocalPreferences.userFavoriteRecipe.add(recipe)
+        viewModelScope.launch {
+            recipe.recipeId.let { recipeId ->
+                if (getIsFavoriteRecipeUseCase(recipeId)) {
+                    removeFromFavoriteRecipeUseCase(recipeId)
+                } else {
+                    addToFavoriteRecipeUseCase(recipeId)
+                }
+                state = state.copy(
+                    recipeDetailState = state.recipeDetailState.copy(
+                        isFavorite = !state.recipeDetailState.isFavorite
+                    )
+                )
+            }
+
         }
-        state = state.copy(
-            recipeDetailState = state.recipeDetailState.copy(
-                isFavorite = !state.recipeDetailState.isFavorite
-            )
-        )
     }
 
     private fun onRateSelected(rate: Int) {
-        //TODO: send rate to post rate service, and retrieve the average rate
-        fakeLocalPreferences.userRatedRecipes[recipeId.toInt()] = rate
-        state = state.copy(
-            recipeDetailState = state.recipeDetailState.copy(
-                ratingBarValue = rate
+        viewModelScope.launch {
+            putUserRatedRecipesUseCase(recipeId!!, rate)
+            state = state.copy(
+                recipeDetailState = state.recipeDetailState.copy(
+                    ratingBarValue = rate
+                )
             )
-        )
+        }
     }
 
     private fun getRecipeDetails() {
         viewModelScope.launch {
             showLoadingState()
-            delay(1000L)
-            recipe = FakeDataProvider.fakeRemoteData.first { it.recipeId == recipeId.toInt() }
+            recipe = getRecipeDetailUseCase(recipeId!!)
             state = state.copy(
                 isLoading = false,
                 recipeDetailState = RecipeDetailState(
@@ -62,10 +77,10 @@ class DetailViewModel : ViewModel() {
                     name = recipe.name,
                     description = recipe.description,
                     rate = recipe.rating.toString(),
-                    isFavorite = fakeLocalPreferences.userFavoriteRecipe.contains(recipe),
+                    isFavorite = getIsFavoriteRecipeUseCase(recipeId!!),
                     ingredients = recipe.ingredients,
                     cookingSteps = recipe.cookingSteps,
-                    ratingBarValue = fakeLocalPreferences.userRatedRecipes[recipeId.toInt()] ?: 0,
+                    ratingBarValue = getUserRatedRecipesUseCase(recipeId!!) ?: 0,
                     cookingTime = recipe.cookingTime,
                     difficulty = recipe.difficulty,
                     authorName = recipe.authorName,
