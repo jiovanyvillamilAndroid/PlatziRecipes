@@ -2,8 +2,8 @@ package com.crisvillamil.platzirecipes.domain
 
 import com.crisvillamil.platzirecipes.model.Repository
 
-class AddToFavoriteRecipeUseCase {
+class AddToFavoriteRecipeUseCase(private val repository: Repository) {
     suspend operator fun invoke(recipeId: Int) {
-        Repository.addRecipeToFavorite(recipeId)
+        repository.addRecipeToFavorite(recipeId)
     }
 }

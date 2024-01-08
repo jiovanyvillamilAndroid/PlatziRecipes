@@ -4,7 +4,7 @@ import com.crisvillamil.platzirecipes.model.Difficulty
 import com.crisvillamil.platzirecipes.model.Recipe
 import com.crisvillamil.platzirecipes.model.Repository
 
-class CreateRecipeUseCase {
+class CreateRecipeUseCase(private val repository: Repository) {
     suspend operator fun invoke(
         name: String,
         description: String,
@@ -18,7 +18,7 @@ class CreateRecipeUseCase {
         cookingTime: String,
         viewsCount: String,
     ) {
-        Repository.createRecipe(
+        repository.createRecipe(
             name,
             description,
             imageUrl,

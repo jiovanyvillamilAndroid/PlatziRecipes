@@ -9,12 +9,12 @@ import com.crisvillamil.platzirecipes.domain.CreateRecipeUseCase
 import com.crisvillamil.platzirecipes.model.Difficulty
 import kotlinx.coroutines.launch
 
-class CreateRecipeViewModel : ViewModel() {
+class CreateRecipeViewModel(
+    val createRecipeUseCase: CreateRecipeUseCase
+) : ViewModel() {
 
     var state by mutableStateOf(CreateRecipeUIState())
         private set
-
-    val createRecipeUseCase = CreateRecipeUseCase()
 
     fun onEvent(createRecipeEvent: CreateRecipeEvent) {
         when (createRecipeEvent) {

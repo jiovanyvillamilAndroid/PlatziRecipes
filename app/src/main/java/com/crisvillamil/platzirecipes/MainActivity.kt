@@ -20,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -29,14 +30,29 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.room.Room
 import com.crisvillamil.platzirecipes.creation.CreateRecipeScreen
 import com.crisvillamil.platzirecipes.creation.CreateRecipeViewModel
 import com.crisvillamil.platzirecipes.detail.DetailScreen
 import com.crisvillamil.platzirecipes.detail.DetailViewModel
+import com.crisvillamil.platzirecipes.domain.AddToFavoriteRecipeUseCase
+import com.crisvillamil.platzirecipes.domain.CreateRecipeUseCase
+import com.crisvillamil.platzirecipes.domain.GetFavoriteRecipesUseCase
+import com.crisvillamil.platzirecipes.domain.GetIsFavoriteRecipeUseCase
+import com.crisvillamil.platzirecipes.domain.GetRecipeDetailUseCase
+import com.crisvillamil.platzirecipes.domain.GetRecipesUseCase
+import com.crisvillamil.platzirecipes.domain.GetUserRatedRecipesUseCase
+import com.crisvillamil.platzirecipes.domain.PutUserRatedRecipeUseCase
+import com.crisvillamil.platzirecipes.domain.RemoveFromFavoriteRecipeUseCase
 import com.crisvillamil.platzirecipes.favorite.FavoriteScreen
 import com.crisvillamil.platzirecipes.favorite.FavoriteViewModel
 import com.crisvillamil.platzirecipes.home.HomeScreen
 import com.crisvillamil.platzirecipes.home.HomeViewModel
+import com.crisvillamil.platzirecipes.model.DatabaseLocalDataSource
+import com.crisvillamil.platzirecipes.model.LocalDataSource
+import com.crisvillamil.platzirecipes.model.RecipesService
+import com.crisvillamil.platzirecipes.model.Repository
+import com.crisvillamil.platzirecipes.model.database.AppDatabase
 import com.crisvillamil.platzirecipes.ui.theme.AppTheme
 
 class MainActivity : ComponentActivity() {
@@ -62,10 +78,45 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun NavHost(modifier: Modifier, navHostController: NavHostController) {
-        val homeViewModel = HomeViewModel()
-        val createRecipeViewModel = CreateRecipeViewModel()
-        val favoriteViewModel = FavoriteViewModel()
-        val detailViewModel = DetailViewModel()
+
+        //Repository
+        val database = Room.databaseBuilder(
+            applicationContext,
+            AppDatabase::class.java, "recipes-database"
+        ).build()
+        val localDataSource: LocalDataSource = DatabaseLocalDataSource(database)
+        val remoteDataSource = RecipesService()
+        val repository = Repository(localDataSource, remoteDataSource)
+
+        //Use Cases
+        val addToFavoriteRecipeUseCase = AddToFavoriteRecipeUseCase(repository)
+        val createRecipeUseCase = CreateRecipeUseCase(repository)
+        val getFavoriteRecipeUseCase = GetFavoriteRecipesUseCase(repository)
+        val getIsFavoriteRecipesUseCase = GetIsFavoriteRecipeUseCase(repository)
+        val getRecipeDetailUseCase = GetRecipeDetailUseCase(repository)
+        val getRecipesUseCase = GetRecipesUseCase(repository)
+        val getUserRatedRecipesUseCase = GetUserRatedRecipesUseCase(repository)
+        val putUserRatedRecipeUseCase = PutUserRatedRecipeUseCase(repository)
+        val removeFromFavoriteRecipeUseCase = RemoveFromFavoriteRecipeUseCase(repository)
+
+        //View Models
+        val homeViewModel = HomeViewModel(
+            getRecipesUseCase,
+            getIsFavoriteRecipesUseCase,
+            removeFromFavoriteRecipeUseCase,
+            addToFavoriteRecipeUseCase
+        )
+        val createRecipeViewModel = CreateRecipeViewModel(createRecipeUseCase)
+        val favoriteViewModel =
+            FavoriteViewModel(getFavoriteRecipeUseCase, removeFromFavoriteRecipeUseCase)
+        val detailViewModel = DetailViewModel(
+            getIsFavoriteRecipesUseCase,
+            addToFavoriteRecipeUseCase,
+            removeFromFavoriteRecipeUseCase,
+            getRecipeDetailUseCase,
+            getUserRatedRecipesUseCase,
+            putUserRatedRecipeUseCase
+        )
         NavHost(
             modifier = modifier,
             navController = navHostController,

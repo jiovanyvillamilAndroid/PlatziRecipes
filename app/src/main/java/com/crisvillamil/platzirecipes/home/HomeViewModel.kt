@@ -9,18 +9,21 @@ import com.crisvillamil.platzirecipes.domain.AddToFavoriteRecipeUseCase
 import com.crisvillamil.platzirecipes.domain.GetIsFavoriteRecipeUseCase
 import com.crisvillamil.platzirecipes.domain.GetRecipesUseCase
 import com.crisvillamil.platzirecipes.domain.RemoveFromFavoriteRecipeUseCase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-class HomeViewModel : ViewModel() {
+class HomeViewModel(
+    private val getRecipesUseCase: GetRecipesUseCase,
+    private val getIsFavoriteRecipeUseCase: GetIsFavoriteRecipeUseCase,
+    private val removeFromFavoriteRecipeUseCase: RemoveFromFavoriteRecipeUseCase,
+    private val addToFavoriteRecipeUseCase: AddToFavoriteRecipeUseCase,
+) : ViewModel() {
 
     var state by mutableStateOf(HomeUIState())
         private set
 
-    private val getRecipesUseCase = GetRecipesUseCase()
-    private val getIsFavoriteRecipeUseCase = GetIsFavoriteRecipeUseCase()
-    private val removeFromFavoriteRecipeUseCase = RemoveFromFavoriteRecipeUseCase()
-    private val addToFavoriteRecipeUseCase = AddToFavoriteRecipeUseCase()
     fun onEvent(homeEvent: HomeEvent) {
         when (homeEvent) {
             is HomeEvent.OnSearch -> onSearch(homeEvent.text)
@@ -32,9 +35,8 @@ class HomeViewModel : ViewModel() {
     private fun fetchRecipes() {
         viewModelScope.launch {
             showLoadingState()
-            state = state.copy(
-                isLoading = false,
-                recipes = getRecipesUseCase().map {
+            val recipes = withContext(Dispatchers.IO) {
+                getRecipesUseCase().map {
                     RecipeItemState(
                         recipeId = it.recipeId,
                         isFavorite = getIsFavoriteRecipeUseCase(it.recipeId),
@@ -45,7 +47,11 @@ class HomeViewModel : ViewModel() {
                         imageUrl = it.imageUrl.orEmpty(),
                         rating = it.rating.toString(),
                     )
-                },
+                }
+            }
+            state = state.copy(
+                isLoading = false,
+                recipes = recipes,
             )
         }
     }
@@ -62,10 +68,12 @@ class HomeViewModel : ViewModel() {
                     )
                 }
             )
-            if (getIsFavoriteRecipeUseCase(recipeId)) {
-                removeFromFavoriteRecipeUseCase(recipeId)
-            } else {
-                addToFavoriteRecipeUseCase(recipeId)
+            withContext(Dispatchers.IO) {
+                if (getIsFavoriteRecipeUseCase(recipeId)) {
+                    removeFromFavoriteRecipeUseCase(recipeId)
+                } else {
+                    addToFavoriteRecipeUseCase(recipeId)
+                }
             }
             state = state.copy(
                 isLoading = false,
@@ -84,8 +92,8 @@ class HomeViewModel : ViewModel() {
 
     private fun onSearch(text: String) {
         viewModelScope.launch {
-            state = state.copy(
-                recipes = getRecipesUseCase().map {
+            val recipes = withContext(Dispatchers.IO) {
+                getRecipesUseCase().map {
                     RecipeItemState(
                         recipeId = it.recipeId,
                         isFavorite = getIsFavoriteRecipeUseCase(it.recipeId),
@@ -102,6 +110,9 @@ class HomeViewModel : ViewModel() {
                         ignoreCase = true
                     )
                 }
+            }
+            state = state.copy(
+                recipes = recipes
             )
         }
     }

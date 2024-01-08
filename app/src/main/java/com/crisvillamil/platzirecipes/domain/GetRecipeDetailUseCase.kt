@@ -2,7 +2,7 @@ package com.crisvillamil.platzirecipes.domain
 
 import com.crisvillamil.platzirecipes.model.Repository
 
-class GetRecipeDetailUseCase {
+class GetRecipeDetailUseCase(private val repository: Repository) {
     suspend operator fun invoke(recipeId: Int) =
-        Repository.getAllRecipes().first { it.recipeId == recipeId }
+        repository.getAllRecipes().first { it.recipeId == recipeId }
 }

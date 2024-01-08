@@ -8,8 +8,10 @@ class Repository(
 ) {
     suspend fun getAllRecipes(): List<Recipe> {
         delay(300L)//TODO: remove this
-        val response = remoteDataSource.getRecipes()
-        if (response.isNotEmpty()) {//TODO save here the local data with Room
+        //val response = remoteDataSource.getRecipes()
+        val fakeDataProvider = FakeDataProvider()//TODO: Remove this
+        val response = fakeDataProvider.getRecipes()//TODO: Remove this
+        if (response.isNotEmpty()) {
             localDataSource.saveRecipes(response)
         }
         return localDataSource.getRecipes()

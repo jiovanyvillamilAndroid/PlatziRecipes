@@ -12,22 +12,25 @@ import com.crisvillamil.platzirecipes.domain.GetUserRatedRecipesUseCase
 import com.crisvillamil.platzirecipes.domain.PutUserRatedRecipeUseCase
 import com.crisvillamil.platzirecipes.domain.RemoveFromFavoriteRecipeUseCase
 import com.crisvillamil.platzirecipes.model.Recipe
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-class DetailViewModel : ViewModel() {
+class DetailViewModel(
+    private val getIsFavoriteRecipeUseCase: GetIsFavoriteRecipeUseCase,
+    private val addToFavoriteRecipeUseCase: AddToFavoriteRecipeUseCase,
+    private val removeFromFavoriteRecipeUseCase: RemoveFromFavoriteRecipeUseCase,
+    private val getRecipeDetailUseCase: GetRecipeDetailUseCase,
+    private val getUserRatedRecipesUseCase: GetUserRatedRecipesUseCase,
+    private val putUserRatedRecipesUseCase: PutUserRatedRecipeUseCase
+) : ViewModel() {
 
     var state by mutableStateOf(DetailUIState())
         private set
 
     var recipeId: Int? = null
     private lateinit var recipe: Recipe
-    private val getIsFavoriteRecipeUseCase = GetIsFavoriteRecipeUseCase()
-    private val addToFavoriteRecipeUseCase = AddToFavoriteRecipeUseCase()
-    private val removeFromFavoriteRecipeUseCase = RemoveFromFavoriteRecipeUseCase()
-    private val getRecipeDetailUseCase = GetRecipeDetailUseCase()
-    private val getUserRatedRecipesUseCase = GetUserRatedRecipesUseCase()
-    private val putUserRatedRecipesUseCase = PutUserRatedRecipeUseCase()
 
     fun onEvent(detailEvent: DetailEvent) {
         when (detailEvent) {
@@ -67,9 +70,11 @@ class DetailViewModel : ViewModel() {
     }
 
     private fun getRecipeDetails() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             showLoadingState()
             recipe = getRecipeDetailUseCase(recipeId!!)
+            val userRateRecipe = getUserRatedRecipesUseCase(recipeId!!) ?: 0
+            val isFavorite = getIsFavoriteRecipeUseCase(recipeId!!)
             state = state.copy(
                 isLoading = false,
                 recipeDetailState = RecipeDetailState(
@@ -77,10 +82,10 @@ class DetailViewModel : ViewModel() {
                     name = recipe.name,
                     description = recipe.description,
                     rate = recipe.rating.toString(),
-                    isFavorite = getIsFavoriteRecipeUseCase(recipeId!!),
+                    isFavorite = isFavorite,
                     ingredients = recipe.ingredients,
                     cookingSteps = recipe.cookingSteps,
-                    ratingBarValue = getUserRatedRecipesUseCase(recipeId!!) ?: 0,
+                    ratingBarValue = userRateRecipe,
                     cookingTime = recipe.cookingTime,
                     difficulty = recipe.difficulty,
                     authorName = recipe.authorName,

@@ -7,17 +7,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.crisvillamil.platzirecipes.domain.GetFavoriteRecipesUseCase
 import com.crisvillamil.platzirecipes.domain.RemoveFromFavoriteRecipeUseCase
-import com.crisvillamil.platzirecipes.model.FakeDataProvider
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-class FavoriteViewModel : ViewModel() {
+class FavoriteViewModel(
+    private val getFavoriteRecipeUseCase: GetFavoriteRecipesUseCase,
+    private val removeFromFavoriteRecipeUseCase: RemoveFromFavoriteRecipeUseCase
+) : ViewModel() {
 
     var state by mutableStateOf(FavoriteUIState())
         private set
-
-    private val getFavoriteRecipeUseCase = GetFavoriteRecipesUseCase()
-    private val removeFromFavoriteRecipeUseCase = RemoveFromFavoriteRecipeUseCase()
 
     fun onEvent(favoriteEvent: FavoriteEvent) {
         when (favoriteEvent) {
@@ -28,10 +28,11 @@ class FavoriteViewModel : ViewModel() {
 
     private fun removeFromFavorite(recipeId: Int) {
         viewModelScope.launch {
-            removeFromFavoriteRecipeUseCase(recipeId)
-            state = state.copy(
-                isLoading = false,
-                favorites = getFavoriteRecipeUseCase().map {
+            withContext(Dispatchers.IO) {
+                removeFromFavoriteRecipeUseCase(recipeId)
+            }
+            val favorites = withContext(Dispatchers.IO) {
+                getFavoriteRecipeUseCase().map {
                     with(it) {
                         FavoriteItemUIState(
                             recipeId = it.recipeId,
@@ -43,6 +44,10 @@ class FavoriteViewModel : ViewModel() {
                         )
                     }
                 }
+            }
+            state = state.copy(
+                isLoading = false,
+                favorites = favorites
             )
         }
     }
@@ -52,12 +57,11 @@ class FavoriteViewModel : ViewModel() {
             state = state.copy(
                 isLoading = true
             )
-            state = state.copy(
-                isLoading = false,
-                favorites = getFavoriteRecipeUseCase().map {
+            val favorites = withContext(Dispatchers.IO) {
+                getFavoriteRecipeUseCase().map {
                     with(it) {
                         FavoriteItemUIState(
-                            recipeId = recipeId,
+                            recipeId = it.recipeId,
                             imageURL = imageUrl.orEmpty(),
                             name = name,
                             cookingTime = cookingTime,
@@ -66,6 +70,10 @@ class FavoriteViewModel : ViewModel() {
                         )
                     }
                 }
+            }
+            state = state.copy(
+                isLoading = false,
+                favorites = favorites
             )
         }
     }
